@@ -28,6 +28,25 @@ def image_to_YCbCr(image):
 
     return np.uint8(converted)
 
+def split_YCbCr(image):
+    (x, y, _z) = image.shape
+
+    rows = image.shape[0]
+    cols = image.shape[1]
+
+    Y = np.zeros(shape=(x,y))
+    Cb = np.zeros(shape=(x,y))
+    Cr = np.zeros(shape=(x,y))
+
+    for x in range(0, cols):
+        for y in range(0, rows):
+            data = image[y, x]
+            Y[y, x] = data[0]
+            Cb[y, x] = data[1]
+            Cr[y, x] = data[2]
+
+    return (Y, Cb, Cr)
+
 def pad_image(image):
     width, height = image.size
     w_8 = math.ceil(width / 8)
