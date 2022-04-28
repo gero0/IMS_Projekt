@@ -61,16 +61,14 @@ def pad_image(image):
 
 # image musut be np.array
 def block_segment(image, blocksize):
-    (x, y, _z) = image.shape
+    (x, y) = image.shape
 
     segments = []
 
     for iy in range(0, y, blocksize):
-        row = []
         for ix in range(0, x, blocksize):
-            segment = image[ ix:(ix + blocksize), iy:(iy + blocksize), :]
-            row.append(segment)
-        segments.append(row)
+            segment = image[ ix:(ix + blocksize), iy:(iy + blocksize)]
+            segments.append(segment)
 
     return np.array(segments)
 
