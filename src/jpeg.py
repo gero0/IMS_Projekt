@@ -2,6 +2,7 @@ import numpy as np
 import image_helpers as im
 from DCT import DCT_2D
 from PIL import Image
+from zigzag import zigzag
 
 # quantization table for 50% quality
 Q = [
@@ -36,6 +37,8 @@ def main():
     # print(T)
     # print(B)
 
+    # print(zigzag(B))
+
     image = Image.open("./img/test_dice.png")
     img = im.pad_image(image)
     I = np.asarray(img)
@@ -46,8 +49,9 @@ def main():
     segments = segment_components(components)
     transformed_segments = transform_segments(segments)
     quantized_segments = quantize_segments(transformed_segments)
+    zigzags = zigzag_segments(quantized_segments)
 
-    print(quantized_segments)
+    print(zigzags)
 
     # img_re = Image.fromarray(I_c, mode="YCbCr")
     # img_re.show("After_conversion")
@@ -74,6 +78,13 @@ def quantize_segments(segments):
     q_Cb = [np.int8(np.around(T / Q)) for T in segments_Cb]
     q_Cr = [np.int8(np.around(T / Q)) for T in segments_Cr]
     return (q_Y, q_Cb, q_Cr)
+
+def zigzag_segments(segments):
+    segments_Y, segments_Cb, segments_Cr = segments
+    z_Y = [zigzag(T) for T in segments_Y]
+    z_Cb = [zigzag(T) for T in segments_Cb]
+    z_Cr = [zigzag(T) for T in segments_Cr]
+    return (z_Y, z_Cb, z_Cr)
 
 if __name__ == "__main__":
     main()
