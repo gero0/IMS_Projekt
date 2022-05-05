@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+
 def dct_alpha(x):
     if x == 0:
         return 1.0 / math.sqrt(2)

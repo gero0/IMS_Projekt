@@ -1,55 +1,20 @@
 import numpy as np
-from huffman import DC_lumi_coeff
+from JPEG.constants import *
 import image_helpers as im
 import math
-from DCT import DCT_2D
-from PIL import Image
-from zigzag import zigzag
-from huffman import *
-
-# quantization table for 50% quality
-Q = [
-    [16, 11, 10, 16, 24, 40, 51, 61],
-    [12, 12, 14, 19, 26, 58, 60, 55],
-    [14, 13, 16, 24, 40, 57, 69, 56],
-    [14, 17, 22, 29, 51, 87, 80, 62],
-    [18, 22, 37, 56, 68, 109, 103, 77],
-    [24, 35, 55, 64, 81, 104, 113, 92],
-    [49, 64, 78, 87, 103, 121, 120, 101],
-    [72, 92, 95, 98, 112, 100, 103, 99],
-]
+from JPEG.DCT import DCT_2D
+from JPEG.jpeg_file import write_to_file
+from JPEG.zigzag import zigzag
+from JPEG.constants import *
 
 
-def main():
-    np.set_printoptions(precision=2, suppress=True)
-
-    # test = np.array(
-    #     [
-    #         [52, 55, 61, 66, 70, 61, 64, 73],
-    #         [63, 59, 55, 90, 109, 85, 69, 72],
-    #         [62, 59, 68, 113, 144, 104, 66, 73],
-    #         [63, 58, 71, 122, 154, 106, 70, 69],
-    #         [67, 61, 68, 104, 126, 88, 68, 70],
-    #         [79, 65, 60, 70, 77, 68, 58, 75],
-    #         [85, 71, 64, 59, 55, 61, 65, 83],
-    #         [87, 79, 69, 68, 65, 76, 78, 94],
-    #     ]
-    # )
-
-    # T = DCT_2D(test)
-    # B = np.int8(np.around(T / Q))
-
-    # print(T)
-    # print(B)
-
-    # print(zigzag(B))
-
-    image = Image.open("./img/test_dice.png")
-    img = im.pad_image(image)
-    I = np.asarray(img)
-
-    I_c = im.image_to_YCbCr(I)
+def compress_image(image, filename="output_jpeg.jpg"):
+    I_c = im.image_to_YCbCr(image)
     components = im.split_YCbCr(I_c)
+
+    s = I_c.shape
+    width = s[1]  # type: ignore
+    height = s[0]  # type: ignore
 
     print("Segmenting...")
     segments = segment_components(components)
@@ -66,10 +31,7 @@ def main():
     print("Runlength encoding AC components...")
     re_segments = runlength_encode_segments(ac)
 
-    # print(re_segments[0])
-
-    # img_re = Image.fromarray(I_c, mode="YCbCr")
-    # img_re.show("After_conversion")
+    write_to_file(filename, width, height, encoded_dc, re_segments)
 
 
 def segment_components(components, blocksize=8):
@@ -90,9 +52,9 @@ def transform_segments(segments):
 
 def quantize_segments(segments):
     segments_Y, segments_Cb, segments_Cr = segments
-    q_Y = [np.int8(np.around(T / Q)) for T in segments_Y]
-    q_Cb = [np.int8(np.around(T / Q)) for T in segments_Cb]
-    q_Cr = [np.int8(np.around(T / Q)) for T in segments_Cr]
+    q_Y = [np.int8(np.around((T / Q_lumi) + 0.01)) for T in segments_Y]
+    q_Cb = [np.int8(np.around((T / Q_chroma) + 0.01)) for T in segments_Cb]
+    q_Cr = [np.int8(np.around((T / Q_chroma) + 0.01)) for T in segments_Cr]
     return (q_Y, q_Cb, q_Cr)
 
 
@@ -191,7 +153,11 @@ def runlength_encode(ac_components, luminance=False):
 
     for i, component in enumerate(ac_components):
         if i > last_nonzero:
-            symbols.append("1010")
+            if luminance:
+                symbol = AC_lumi_coeff[(0, 0)]
+            else:
+                symbol = AC_chroma_coeff[(0, 0)]
+            symbols.append(symbol)
             break
         elif component == 0 and runlength < 15:
             runlength += 1
@@ -209,7 +175,3 @@ def runlength_encode(ac_components, luminance=False):
             runlength = 0
 
     return symbols
-
-
-if __name__ == "__main__":
-    main()
