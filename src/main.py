@@ -5,7 +5,8 @@ from PIL import Image
 
 def main():
     image = Image.open("./img/test_dice.png")
-    img = im.pad_image(image)
+    rgb_im = image.convert('RGB')
+    img = im.pad_image(rgb_im)
     I = np.asarray(img)
 
     print("Compressing using JPEG...")
